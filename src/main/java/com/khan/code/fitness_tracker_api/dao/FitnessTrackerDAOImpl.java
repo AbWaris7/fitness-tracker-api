@@ -21,7 +21,7 @@ public class FitnessTrackerDAOImpl implements FitnessTrackerDAO {
     @Override
     public List<FitnessTracker> findAll() {
 
-        TypedQuery<FitnessTracker> query = entityManager.createQuery("from FitnessTracker", FitnessTracker.class);
+        TypedQuery<FitnessTracker> query = entityManager.createQuery("from FitnessTracker order by id desc", FitnessTracker.class);
 
         return query.getResultList();
     }
