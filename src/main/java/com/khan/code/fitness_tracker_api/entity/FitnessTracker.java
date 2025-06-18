@@ -6,7 +6,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "FitnessTrackers")
+@Entity(name = "FitnessTracker")
 @Table(name = "fitness_tracker")
 public class FitnessTracker {
 
