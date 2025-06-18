@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface FitnessTrackerDAO {
 
-    public List<FitnessTracker> findAll();
+    List<FitnessTracker> findAll();
+    FitnessTracker save(FitnessTracker fitnessTracker);
+
 }
