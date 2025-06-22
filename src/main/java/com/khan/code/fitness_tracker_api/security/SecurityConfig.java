@@ -24,6 +24,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/developers/**").authenticated()
                         .anyRequest().permitAll()
                 )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/applications/register").authenticated()
+                )
                 .httpBasic(Customizer.withDefaults()) // Enables Basic Auth
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();

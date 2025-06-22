@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "developers", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 @Data
@@ -23,4 +26,8 @@ public class Developer {
 
     @Column(nullable = false)
     private String password;
+
+    @OneToMany(mappedBy = "developer", cascade = CascadeType.ALL)
+    private List<Application> applications = new ArrayList<>();
+
 }

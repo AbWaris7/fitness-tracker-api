@@ -1,10 +1,15 @@
 package com.khan.code.fitness_tracker_api.controller;
 
 
+import com.khan.code.fitness_tracker_api.dao.ApplicationRepository;
 import com.khan.code.fitness_tracker_api.dao.DeveloperRepository;
+import com.khan.code.fitness_tracker_api.dto.ApplicationRegisterRequest;
+import com.khan.code.fitness_tracker_api.dto.ApplicationResponse;
 import com.khan.code.fitness_tracker_api.dto.DeveloperResponse;
 import com.khan.code.fitness_tracker_api.dto.DeveloperSignupRequest;
+import com.khan.code.fitness_tracker_api.entity.Application;
 import com.khan.code.fitness_tracker_api.entity.Developer;
+import com.khan.code.fitness_tracker_api.util.ApiKeyGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.Comparator;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/developers")
@@ -24,6 +31,9 @@ public class DeveloperController {
 
     private final DeveloperRepository developerRepository;
     private final PasswordEncoder encoder;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
 
     @Autowired
     public DeveloperController(DeveloperRepository developerRepository, PasswordEncoder encoder) {
@@ -46,8 +56,30 @@ public class DeveloperController {
         return ResponseEntity.created(location).build();
     }
 
+
+    @PostMapping("/applications/register")
+    public ResponseEntity<?> registerApp(@Valid @RequestBody ApplicationRegisterRequest request, Authentication auth) {
+        if (applicationRepository.existsByName(request.getName())) {
+            return ResponseEntity.badRequest().body("Application name already exists");
+        }
+
+        String email = auth.getName();
+        Developer dev = developerRepository.findByEmail(email).orElseThrow();
+
+        Application app = Application.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .apikey(ApiKeyGenerator.generateApiKey())
+                .developer(dev)
+                .build();
+
+        applicationRepository.save(app);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApplicationResponse(app.getName(), app.getApikey()));
+    }
+
     @GetMapping("/{id}")
-    @Operation(summary = "Get  Developer by Id", description = "Retrieve a record based on developer id ")
     public ResponseEntity<?> getDeveloper(@PathVariable Long id, Authentication authentication) {
         String loggedInEmail = authentication.getName();
 
@@ -58,7 +90,16 @@ public class DeveloperController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return ResponseEntity.ok(new DeveloperResponse(dev.getId(), dev.getEmail()));
+        List<DeveloperResponse.ApplicationInfo> apps = dev.getApplications().stream()
+                .sorted(Comparator.comparing(Application::getId).reversed())
+                .map(a -> new DeveloperResponse.ApplicationInfo(
+                        a.getId(), a.getName(), a.getDescription(), a.getApikey()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(new DeveloperResponse(dev.getId(), dev.getEmail(), apps));
     }
+
+
 }
 
